@@ -1,0 +1,132 @@
+name: ⚡ Auto Issue Creator for Quickdraw Badge
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Segunda-feira às 9h UTC
+  workflow_dispatch:
+    inputs:
+      issue_type:
+        description: 'Tipo de issue para criar'
+        required: true
+        default: 'weekly-planning'
+        type: choice
+        options:
+        - weekly-planning
+        - feature-request
+        - bug-report
+        - documentation
+
+jobs:
+  create-quickdraw-issue:
+    name: 🎯 Create Issue for Quickdraw
+    runs-on: ubuntu-latest
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: ⚡ Create Weekly Planning Issue
+      if: github.event.inputs.issue_type == 'weekly-planning' || github.event_name == 'schedule'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const date = new Date().toISOString().split('T')[0];
+          const weekNumber = Math.ceil((new Date() - new Date(new Date().getFullYear(), 0, 1)) / (7 * 24 * 60 * 60 * 1000));
+          
+          await github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: `📅 Planejamento Semanal - Semana ${weekNumber} (${date})`,
+            body: `## 🎯 Objetivos da Semana ${weekNumber}
+
+### 🏆 Progresso das Insígnias
+- [ ] Verificar status Pull Shark
+- [ ] Implementar nova co-autoria (Pair Extraordinaire)
+- [ ] Otimizar workflows (DevOps Guru)
+- [ ] Criar nova discussão (Galaxy Brain)
+- [ ] Adicionar reações em issues (Heart On Your Sleeve)
+
+### 📋 Tarefas Técnicas
+- [ ] Revisar documentação
+- [ ] Atualizar scripts de automação
+- [ ] Testar novos workflows
+- [ ] Monitorar métricas de badges
+
+### 📊 Métricas da Semana
+- PRs criados: 
+- Commits com co-autoria: 
+- Workflows executados: 
+- Discussões criadas: 
+- Issues com reações: 
+
+---
+**Issue criada automaticamente para badge Quickdraw** ⚡`,
+            labels: ['planning', 'weekly', 'quickdraw', 'automation']
+          });
+
+    - name: 🚀 Create Feature Request Issue
+      if: github.event.inputs.issue_type == 'feature-request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          await github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: `💡 Nova Feature - ${new Date().toISOString().split('T')[0]}`,
+            body: `## 💡 Descrição da Feature
+
+### Problema
+Descrever o problema que esta feature resolve.
+
+### Solução Proposta
+Descrever a solução proposta.
+
+### Benefícios
+- Melhoria na experiência
+- Otimização de processo
+- Facilita conquista de badges
+
+### Critérios de Aceitação
+- [ ] Implementação funcional
+- [ ] Testes adicionados
+- [ ] Documentação atualizada
+
+---
+**Issue criada automaticamente para badge Quickdraw** ⚡`,
+            labels: ['enhancement', 'feature', 'quickdraw']
+          });
+
+    - name: 📝 Create Documentation Issue
+      if: github.event.inputs.issue_type == 'documentation'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          await github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: `📚 Atualização de Documentação - ${new Date().toISOString().split('T')[0]}`,
+            body: `## 📚 Documentação para Atualizar
+
+### Seções a Revisar
+- [ ] README principal
+- [ ] Guias de estratégias
+- [ ] Documentação de workflows
+- [ ] Exemplos práticos
+
+### Melhorias Necessárias
+- [ ] Adicionar mais exemplos
+- [ ] Atualizar capturas de tela
+- [ ] Revisar links
+- [ ] Corrigir typos
+
+### Impacto
+Esta atualização melhorará a experiência dos usuários e facilitará a replicação das estratégias.
+
+---
+**Issue criada automaticamente para badge Quickdraw** ⚡`,
+            labels: ['documentation', 'improvement', 'quickdraw']
+          });
+
+    - name: ✅ Issue Creation Complete
+      run: |
+        echo "✅ Issue criada com sucesso para badge Quickdraw!"
+        echo "⏱️ Tempo de execução: menos de 5 minutos"
+        echo "🎯 Badge Quickdraw: Em progresso"

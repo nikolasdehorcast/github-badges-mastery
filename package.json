@@ -1,0 +1,88 @@
+{
+  "name": "github-badges-mastery",
+  "version": "1.0.0",
+  "description": "Projeto sistemático para conquistar todas as insígnias do GitHub usando estratégias inteligentes e automação",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node tests/index.test.js",
+    "build": "echo '🏗️ Building project...' && node src/index.js",
+    "badges": "bash scripts/badge-monitor.sh",
+    "setup": "bash scripts/setup-badges.sh",
+    "dev": "node src/index.js",
+    "monitor": "bash scripts/badge-monitor.sh",
+    "lint": "echo '🔍 Linting code...' && echo 'No linter configured yet'",
+    "format": "echo '✨ Formatting code...' && echo 'No formatter configured yet'",
+    "ci": "npm test && npm run build",
+    "precommit": "npm run lint && npm test"
+  },
+  "keywords": [
+    "github",
+    "badges",
+    "achievements",
+    "automation",
+    "devops",
+    "ci-cd",
+    "pull-requests",
+    "github-actions",
+    "pair-programming",
+    "open-source"
+  ],
+  "author": {
+    "name": "GitHub Badges Master",
+    "email": "badges@mastery.com",
+    "url": "https://github.com/username/github-badges-mastery"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/username/github-badges-mastery.git"
+  },
+  "bugs": {
+    "url": "https://github.com/username/github-badges-mastery/issues"
+  },
+  "homepage": "https://github.com/username/github-badges-mastery#readme",
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "devDependencies": {},
+  "dependencies": {},
+  "badges": {
+    "pullShark": {
+      "target": 2,
+      "current": 0,
+      "status": "in-progress"
+    },
+    "pairExtraordinaire": {
+      "target": 1,
+      "current": 0,
+      "status": "in-progress"
+    },
+    "devopsGuru": {
+      "target": 1,
+      "current": 1,
+      "status": "in-progress"
+    },
+    "galaxyBrain": {
+      "target": 1,
+      "current": 0,
+      "status": "pending"
+    },
+    "quickdraw": {
+      "target": 1,
+      "current": 0,
+      "status": "in-progress"
+    },
+    "heartOnYourSleeve": {
+      "target": 1,
+      "current": 0,
+      "status": "pending"
+    },
+    "yolo": {
+      "target": 1,
+      "current": 0,
+      "status": "pending"
+    }
+  }
+}

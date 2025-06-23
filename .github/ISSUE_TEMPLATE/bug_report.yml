@@ -1,0 +1,129 @@
+name: 🐛 Bug Report
+description: Reporte um bug ou problema encontrado
+title: "[BUG] "
+labels: ["bug", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🐛 Obrigado por reportar um bug!
+        
+        Preencha os campos abaixo para nos ajudar a reproduzir e corrigir o problema.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 📝 Descrição do Bug
+      description: Uma descrição clara e concisa do que está acontecendo
+      placeholder: Descreva o bug encontrado...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 🔄 Passos para Reproduzir
+      description: Passos para reproduzir o comportamento
+      placeholder: |
+        1. Vá para '...'
+        2. Clique em '...'
+        3. Execute '...'
+        4. Veja o erro
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: ✅ Comportamento Esperado
+      description: O que você esperava que acontecesse?
+      placeholder: Descreva o comportamento esperado...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: ❌ Comportamento Atual
+      description: O que realmente aconteceu?
+      placeholder: Descreva o que realmente aconteceu...
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 🖥️ Ambiente
+      description: Informações sobre o ambiente onde o bug ocorreu
+      placeholder: |
+        - OS: [ex: Windows 11, macOS 13, Ubuntu 22.04]
+        - Browser: [ex: Chrome 120, Firefox 121]
+        - Node.js: [ex: 20.10.0]
+        - Git: [ex: 2.42.0]
+      value: |
+        - OS: 
+        - Browser: 
+        - Node.js: 
+        - Git: 
+    validations:
+      required: true
+
+  - type: dropdown
+    id: badge-related
+    attributes:
+      label: 🏆 Relacionado a Badge
+      description: Este bug está relacionado a alguma estratégia de badge específica?
+      options:
+        - Não relacionado a badges
+        - Pull Shark
+        - Pair Extraordinaire
+        - DevOps Guru
+        - Galaxy Brain
+        - Quickdraw
+        - Heart On Your Sleeve
+        - YOLO
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 📋 Logs/Outputs
+      description: Cole aqui qualquer log ou output relevante
+      placeholder: Cole logs, mensagens de erro, outputs de console...
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 📸 Screenshots
+      description: Se aplicável, adicione screenshots para ajudar a explicar o problema
+      placeholder: Cole ou arraste screenshots aqui...
+    validations:
+      required: false
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: 🚨 Severidade
+      description: Qual a severidade deste bug?
+      options:
+        - Baixa (cosmético, não afeta funcionalidade)
+        - Média (afeta funcionalidade, mas há workaround)
+        - Alta (afeta funcionalidade crítica)
+        - Crítica (quebra o sistema completamente)
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 📋 Contexto Adicional
+      description: Qualquer informação adicional sobre o problema
+      placeholder: Contexto adicional, possíveis causas, tentativas de solução...
+    validations:
+      required: false

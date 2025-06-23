@@ -1,0 +1,89 @@
+name: 💡 Feature Request
+description: Sugira uma nova funcionalidade para o projeto
+title: "[FEATURE] "
+labels: ["enhancement", "feature-request"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 💡 Obrigado por sugerir uma nova feature!
+        
+        Preencha os campos abaixo para nos ajudar a entender sua sugestão.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 🎯 Problema ou Necessidade
+      description: Qual problema esta feature resolveria?
+      placeholder: Descreva o problema ou necessidade que motivou esta sugestão...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: 💡 Solução Proposta
+      description: Como você imagina que esta feature funcionaria?
+      placeholder: Descreva sua ideia de solução...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 🔄 Alternativas Consideradas
+      description: Você pensou em outras formas de resolver este problema?
+      placeholder: Descreva outras alternativas que você considerou...
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: badge-impact
+    attributes:
+      label: 🏆 Impacto nas Badges
+      description: Esta feature pode ajudar na conquista de quais badges?
+      options:
+        - label: Pull Shark (PRs)
+        - label: Pair Extraordinaire (Co-autoria)
+        - label: DevOps Guru (GitHub Actions)
+        - label: Galaxy Brain (Discussões)
+        - label: Quickdraw (Issues rápidas)
+        - label: Heart On Your Sleeve (Reações)
+        - label: YOLO (Merges diretos)
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 📊 Prioridade
+      description: Qual a prioridade desta feature?
+      options:
+        - Baixa
+        - Média
+        - Alta
+        - Crítica
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 📋 Contexto Adicional
+      description: Qualquer informação adicional que possa ser útil
+      placeholder: Screenshots, links, referências, etc...
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: ✅ Confirmação
+      description: Confirme que você verificou os seguintes itens
+      options:
+        - label: Verifiquei se já existe uma issue similar
+          required: true
+        - label: Esta feature está alinhada com os objetivos do projeto
+          required: true
+        - label: Estou disposto(a) a contribuir com a implementação
+          required: false
