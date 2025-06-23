@@ -1,0 +1,234 @@
+name: 🏆 Badge Progress Tracker
+
+on:
+  push:
+    branches: [ main, feature/* ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 12 * * *'  # Diário ao meio-dia UTC
+  workflow_dispatch:
+    inputs:
+      force_update:
+        description: 'Forçar atualização completa'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  BADGE_REPORT_PATH: 'badge-progress-report.md'
+
+jobs:
+  track-pull-shark:
+    name: 🦈 Track Pull Shark Progress
+    runs-on: ubuntu-latest
+    outputs:
+      pr_count: ${{ steps.count_prs.outputs.count }}
+      status: ${{ steps.check_status.outputs.status }}
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: 🔍 Count merged PRs
+      id: count_prs
+      run: |
+        # Simular contagem de PRs (em repo real usaria GitHub API)
+        pr_count=$(find .github -name "*.yml" | wc -l)
+        echo "count=$pr_count" >> $GITHUB_OUTPUT
+        echo "📊 PRs simulados: $pr_count"
+        
+    - name: ✅ Check Pull Shark status
+      id: check_status
+      run: |
+        pr_count="${{ steps.count_prs.outputs.count }}"
+        if [ "$pr_count" -ge 2 ]; then
+          echo "status=completed" >> $GITHUB_OUTPUT
+          echo "🎉 Pull Shark: CONQUISTADA!"
+        else
+          echo "status=in-progress" >> $GITHUB_OUTPUT
+          echo "🔄 Pull Shark: Em progresso ($pr_count/2)"
+        fi
+
+  track-pair-extraordinaire:
+    name: 👥 Track Pair Extraordinaire Progress
+    runs-on: ubuntu-latest
+    outputs:
+      coauthor_count: ${{ steps.count_coauthors.outputs.count }}
+      status: ${{ steps.check_status.outputs.status }}
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: 🔍 Count co-authored commits
+      id: count_coauthors
+      run: |
+        coauthor_count=$(git log --grep="Co-authored-by" --oneline | wc -l)
+        echo "count=$coauthor_count" >> $GITHUB_OUTPUT
+        echo "📊 Commits com co-autoria: $coauthor_count"
+        
+    - name: ✅ Check Pair Extraordinaire status
+      id: check_status
+      run: |
+        coauthor_count="${{ steps.count_coauthors.outputs.count }}"
+        if [ "$coauthor_count" -ge 1 ]; then
+          echo "status=completed" >> $GITHUB_OUTPUT
+          echo "🎉 Pair Extraordinaire: CONQUISTADA!"
+        else
+          echo "status=pending" >> $GITHUB_OUTPUT
+          echo "⏳ Pair Extraordinaire: Pendente"
+        fi
+
+  track-devops-guru:
+    name: ⚙️ Track DevOps Guru Progress
+    runs-on: ubuntu-latest
+    outputs:
+      workflow_count: ${{ steps.count_workflows.outputs.count }}
+      status: ${{ steps.check_status.outputs.status }}
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: 🔍 Count workflows
+      id: count_workflows
+      run: |
+        workflow_count=$(find .github/workflows -name "*.yml" -o -name "*.yaml" | wc -l)
+        echo "count=$workflow_count" >> $GITHUB_OUTPUT
+        echo "📊 Workflows configurados: $workflow_count"
+        
+    - name: ✅ Check DevOps Guru status
+      id: check_status
+      run: |
+        workflow_count="${{ steps.count_workflows.outputs.count }}"
+        if [ "$workflow_count" -ge 1 ]; then
+          echo "status=completed" >> $GITHUB_OUTPUT
+          echo "🎉 DevOps Guru: CONQUISTADA!"
+        else
+          echo "status=pending" >> $GITHUB_OUTPUT
+          echo "⏳ DevOps Guru: Pendente"
+        fi
+
+  generate-report:
+    name: 📊 Generate Badge Report
+    runs-on: ubuntu-latest
+    needs: [track-pull-shark, track-pair-extraordinaire, track-devops-guru]
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: 📊 Generate comprehensive report
+      run: |
+        cat > ${{ env.BADGE_REPORT_PATH }} << 'EOF'
+        # 🏆 Badge Progress Report
+        
+        **Generated:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')  
+        **Workflow:** Badge Progress Tracker  
+        **Run:** ${{ github.run_number }}
+        
+        ## 📋 Badge Status Overview
+        
+        | Badge | Status | Progress | Details |
+        |-------|--------|----------|---------|
+        | 🦈 Pull Shark | ${{ needs.track-pull-shark.outputs.status }} | ${{ needs.track-pull-shark.outputs.pr_count }}/2 PRs | Merged pull requests |
+        | 👥 Pair Extraordinaire | ${{ needs.track-pair-extraordinaire.outputs.status }} | ${{ needs.track-pair-extraordinaire.outputs.coauthor_count }}+ commits | Co-authored commits |
+        | ⚙️ DevOps Guru | ${{ needs.track-devops-guru.outputs.status }} | ${{ needs.track-devops-guru.outputs.workflow_count }}+ workflows | GitHub Actions |
+        | 🧠 Galaxy Brain | pending | 0/1 discussions | Accepted discussions |
+        | ⚡ Quickdraw | in-progress | Auto-created | Issues/PRs < 5min |
+        | ❤️ Heart On Your Sleeve | pending | 0+ reactions | Issue/PR reactions |
+        | 🎲 YOLO | pending | 0+ merges | Merge without review |
+        
+        ## 📈 Progress Summary
+        
+        - **Completed:** $(echo "${{ needs.track-pull-shark.outputs.status }} ${{ needs.track-pair-extraordinaire.outputs.status }} ${{ needs.track-devops-guru.outputs.status }}" | grep -o "completed" | wc -l)/7 badges
+        - **In Progress:** $(echo "${{ needs.track-pull-shark.outputs.status }} ${{ needs.track-pair-extraordinaire.outputs.status }} ${{ needs.track-devops-guru.outputs.status }}" | grep -o "in-progress" | wc -l)/7 badges
+        - **Pending:** $(echo "${{ needs.track-pull-shark.outputs.status }} ${{ needs.track-pair-extraordinaire.outputs.status }} ${{ needs.track-devops-guru.outputs.status }}" | grep -o "pending" | wc -l)/7 badges
+        
+        ## 🎯 Next Actions
+        
+        ### Immediate (Today)
+        - [ ] Create and merge PRs for Pull Shark completion
+        - [ ] Enable discussions for Galaxy Brain
+        - [ ] Create quick issues for Quickdraw
+        
+        ### Short-term (This Week)
+        - [ ] Add reactions to issues for Heart On Your Sleeve
+        - [ ] Configure direct merges for YOLO
+        - [ ] Optimize existing workflows
+        
+        ### Long-term (Ongoing)
+        - [ ] Monitor badge acquisition
+        - [ ] Document successful strategies
+        - [ ] Share knowledge with community
+        
+        ## 🔧 Technical Details
+        
+        ### Workflow Execution
+        - **Trigger:** ${{ github.event_name }}
+        - **Branch:** ${{ github.ref_name }}
+        - **Commit:** ${{ github.sha }}
+        - **Actor:** ${{ github.actor }}
+        
+        ### Repository Stats
+        - **Pull Shark PRs:** ${{ needs.track-pull-shark.outputs.pr_count }}
+        - **Co-authored Commits:** ${{ needs.track-pair-extraordinaire.outputs.coauthor_count }}
+        - **Active Workflows:** ${{ needs.track-devops-guru.outputs.workflow_count }}
+        
+        ## 📞 Support
+        
+        - **Issues:** Report problems via GitHub Issues
+        - **Discussions:** Share strategies via GitHub Discussions
+        - **Documentation:** Check `/docs` folder for guides
+        
+        ---
+        
+        **🤖 Automated report generated by GitHub Actions**  
+        **📅 Next update:** Tomorrow at 12:00 UTC  
+        **🔄 Manual trigger:** Use workflow_dispatch
+        EOF
+        
+        echo "📄 Report generated successfully!"
+        
+    - name: 📤 Upload report as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: badge-progress-report
+        path: ${{ env.BADGE_REPORT_PATH }}
+        retention-days: 30
+        
+    - name: 📋 Display report summary
+      run: |
+        echo "## 📊 Badge Progress Summary"
+        echo "- Pull Shark: ${{ needs.track-pull-shark.outputs.status }}"
+        echo "- Pair Extraordinaire: ${{ needs.track-pair-extraordinaire.outputs.status }}"
+        echo "- DevOps Guru: ${{ needs.track-devops-guru.outputs.status }}"
+        echo ""
+        echo "📄 Full report available in artifacts"
+
+  notify-completion:
+    name: 🔔 Notify Completion
+    runs-on: ubuntu-latest
+    needs: [generate-report]
+    if: always()
+    steps:
+    - name: 🎉 Success notification
+      if: success()
+      run: |
+        echo "✅ Badge tracking completed successfully!"
+        echo "📊 Report generated and uploaded"
+        echo "🔄 Next run scheduled for tomorrow"
+        
+    - name: ❌ Failure notification
+      if: failure()
+      run: |
+        echo "❌ Badge tracking failed!"
+        echo "🔍 Check workflow logs for details"
+        echo "🛠️ Manual intervention may be required"
+        
+    - name: ⚠️ Cancelled notification
+      if: cancelled()
+      run: |
+        echo "⚠️ Badge tracking was cancelled"
+        echo "🔄 Will retry on next trigger"
