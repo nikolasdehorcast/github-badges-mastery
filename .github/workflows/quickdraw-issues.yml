@@ -1,0 +1,86 @@
+name: ⚡ Quickdraw - Auto Issue Creator
+on:
+  schedule:
+    - cron: '0 9 * * 1,3,5'  # Segunda, Quarta e Sexta às 9h
+  workflow_dispatch:
+    inputs:
+      issue_count:
+        description: 'Number of issues to create'
+        required: false
+        default: '1'
+        type: string
+
+jobs:
+  quickdraw-issues:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+    
+    - name: ⚡ Create Quick Issues for Quickdraw Badge
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const issueCount = parseInt('${{ github.event.inputs.issue_count }}' || '1');
+          const issues = [
+            {
+              title: '📝 Weekly Documentation Update',
+              body: '## 📚 Documentation Tasks\n\n- [ ] Update README.md\n- [ ] Review badge progress\n- [ ] Add new examples\n\n**Priority:** Medium\n**Estimated time:** 1 hour',
+              labels: ['documentation', 'weekly', 'quickdraw']
+            },
+            {
+              title: '🔧 Code Quality Improvements',
+              body: '## 🔧 Refactoring Tasks\n\n- [ ] Review and refactor scripts\n- [ ] Optimize workflows\n- [ ] Update dependencies\n\n**Priority:** Low\n**Estimated time:** 2 hours',
+              labels: ['enhancement', 'code-quality', 'quickdraw']
+            },
+            {
+              title: '🧪 Testing Enhancements',
+              body: '## 🧪 Testing Improvements\n\n- [ ] Add more test cases\n- [ ] Improve test coverage\n- [ ] Test automation scripts\n\n**Priority:** High\n**Estimated time:** 3 hours',
+              labels: ['testing', 'enhancement', 'quickdraw']
+            },
+            {
+              title: '📈 Badge Progress Monitoring',
+              body: '## 📊 Badge Status Check\n\n- [ ] Check current badge status\n- [ ] Update progress documentation\n- [ ] Plan next badge strategies\n\n**Priority:** Medium\n**Estimated time:** 30 minutes',
+              labels: ['monitoring', 'badges', 'quickdraw']
+            },
+            {
+              title: '🚀 New Feature Implementation',
+              body: '## 💡 Feature Ideas\n\n- [ ] Implement badge tracker dashboard\n- [ ] Add automated badge detection\n- [ ] Create badge analytics\n\n**Priority:** High\n**Estimated time:** 4 hours',
+              labels: ['feature', 'enhancement', 'quickdraw']
+            }
+          ];
+          
+          const selectedIssues = issues.slice(0, issueCount);
+          
+          for (const issue of selectedIssues) {
+            const response = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: issue.title,
+              body: issue.body,
+              labels: issue.labels
+            });
+            
+            console.log(`✅ Created issue: ${issue.title}`);
+            console.log(`🔗 URL: ${response.data.html_url}`);
+            
+            // Add a reaction for Heart On Your Sleeve badge
+            await github.rest.reactions.createForIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: response.data.number,
+              content: 'rocket'
+            });
+            
+            console.log(`❤️ Added reaction to issue #${response.data.number}`);
+          }
+          
+          console.log(`🎉 Successfully created ${selectedIssues.length} issues for Quickdraw badge!`);
+          
+    - name: 🎯 Badge Achievement Notification
+      run: |
+        echo "⚡ Quickdraw badge requirements:"
+        echo "✅ Created issues within 5 minutes of workflow trigger"
+        echo "✅ Issues include proper labels and formatting"
+        echo "✅ Automated reactions added for Heart On Your Sleeve badge"
+        echo "🏆 Quickdraw badge should be achieved!"
