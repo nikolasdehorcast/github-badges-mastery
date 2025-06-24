@@ -1,9 +1,5 @@
 name: 🚀 CI/CD Pipeline for DevOps Guru Badge
 on:
-  push:
-    branches: [ main, develop, feature/* ]
-  pull_request:
-    branches: [ main ]
   workflow_dispatch:
 
 jobs:

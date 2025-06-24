@@ -1,0 +1,238 @@
+name: 📊 Badge Progress Monitor
+on:
+  schedule:
+    - cron: '0 8 * * 1,3,5'  # Segunda, Quarta e Sexta às 8h
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  monitor-badges:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: 📊 Analyze Repository Statistics
+      id: stats
+      run: |
+        echo "🔍 Analyzing repository for badge progress..."
+        
+        # Count merged PRs
+        PR_COUNT=$(gh pr list --state merged --json number | jq length)
+        echo "pr_count=$PR_COUNT" >> $GITHUB_OUTPUT
+        
+        # Count co-authored commits
+        COAUTHOR_COUNT=$(git log --grep="Co-authored-by" --oneline | wc -l)
+        echo "coauthor_count=$COAUTHOR_COUNT" >> $GITHUB_OUTPUT
+        
+        # Count GitHub Actions workflows
+        WORKFLOW_COUNT=$(find .github/workflows -name "*.yml" | wc -l)
+        echo "workflow_count=$WORKFLOW_COUNT" >> $GITHUB_OUTPUT
+        
+        # Count issues with reactions
+        ISSUES_WITH_REACTIONS=$(gh issue list --json number,reactions | jq '[.[] | select(.reactions | length > 0)] | length')
+        echo "issues_with_reactions=$ISSUES_WITH_REACTIONS" >> $GITHUB_OUTPUT
+        
+        # Count total issues
+        TOTAL_ISSUES=$(gh issue list --state all --json number | jq length)
+        echo "total_issues=$TOTAL_ISSUES" >> $GITHUB_OUTPUT
+        
+        # Count discussions (if available)
+        DISCUSSION_COUNT=$(gh api graphql -f query='query($owner: String!, $repo: String!) { 
+          repository(owner: $owner, name: $repo) { 
+            discussions(first: 100) { 
+              totalCount 
+            } 
+          } 
+        }' -f owner="${{ github.repository_owner }}" -f repo="${{ github.event.repository.name }}" --jq '.data.repository.discussions.totalCount' 2>/dev/null || echo "0")
+        echo "discussion_count=$DISCUSSION_COUNT" >> $GITHUB_OUTPUT
+        
+        echo "📊 Statistics collected successfully!"
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: 🏆 Calculate Badge Progress
+      id: progress
+      run: |
+        PR_COUNT="${{ steps.stats.outputs.pr_count }}"
+        COAUTHOR_COUNT="${{ steps.stats.outputs.coauthor_count }}"
+        WORKFLOW_COUNT="${{ steps.stats.outputs.workflow_count }}"
+        ISSUES_WITH_REACTIONS="${{ steps.stats.outputs.issues_with_reactions }}"
+        DISCUSSION_COUNT="${{ steps.stats.outputs.discussion_count }}"
+        
+        echo "🦈 Pull Shark: $PR_COUNT PRs (need 2+)"
+        PULL_SHARK=$([ "$PR_COUNT" -ge 2 ] && echo "✅ ACHIEVED" || echo "🔄 In Progress ($PR_COUNT/2)")
+        echo "pull_shark=$PULL_SHARK" >> $GITHUB_OUTPUT
+        
+        echo "👥 Pair Extraordinaire: $COAUTHOR_COUNT co-authored commits"
+        PAIR_EXTRAORDINAIRE=$([ "$COAUTHOR_COUNT" -ge 1 ] && echo "✅ ACHIEVED" || echo "🔄 Pending")
+        echo "pair_extraordinaire=$PAIR_EXTRAORDINAIRE" >> $GITHUB_OUTPUT
+        
+        echo "⚙️ DevOps Guru: $WORKFLOW_COUNT workflows"
+        DEVOPS_GURU=$([ "$WORKFLOW_COUNT" -ge 1 ] && echo "✅ ACHIEVED" || echo "🔄 Pending")
+        echo "devops_guru=$DEVOPS_GURU" >> $GITHUB_OUTPUT
+        
+        echo "🧠 Galaxy Brain: $DISCUSSION_COUNT discussions"
+        GALAXY_BRAIN=$([ "$DISCUSSION_COUNT" -ge 1 ] && echo "✅ ACHIEVED" || echo "🔄 Pending")
+        echo "galaxy_brain=$GALAXY_BRAIN" >> $GITHUB_OUTPUT
+        
+        echo "❤️ Heart On Your Sleeve: $ISSUES_WITH_REACTIONS issues with reactions"
+        HEART_ON_SLEEVE=$([ "$ISSUES_WITH_REACTIONS" -ge 1 ] && echo "✅ ACHIEVED" || echo "🔄 Pending")
+        echo "heart_on_sleeve=$HEART_ON_SLEEVE" >> $GITHUB_OUTPUT
+        
+        # Calculate total progress
+        ACHIEVED_COUNT=0
+        [ "$PULL_SHARK" = "✅ ACHIEVED" ] && ACHIEVED_COUNT=$((ACHIEVED_COUNT + 1))
+        [ "$PAIR_EXTRAORDINAIRE" = "✅ ACHIEVED" ] && ACHIEVED_COUNT=$((ACHIEVED_COUNT + 1))
+        [ "$DEVOPS_GURU" = "✅ ACHIEVED" ] && ACHIEVED_COUNT=$((ACHIEVED_COUNT + 1))
+        [ "$GALAXY_BRAIN" = "✅ ACHIEVED" ] && ACHIEVED_COUNT=$((ACHIEVED_COUNT + 1))
+        [ "$HEART_ON_SLEEVE" = "✅ ACHIEVED" ] && ACHIEVED_COUNT=$((ACHIEVED_COUNT + 1))
+        
+        PROGRESS_PERCENTAGE=$((ACHIEVED_COUNT * 100 / 7))
+        echo "progress_percentage=$PROGRESS_PERCENTAGE" >> $GITHUB_OUTPUT
+        echo "achieved_count=$ACHIEVED_COUNT" >> $GITHUB_OUTPUT
+        
+    - name: 📝 Generate Progress Report
+      run: |
+        mkdir -p reports
+        REPORT_FILE="reports/badge-progress-$(date +%Y%m%d-%H%M%S).md"
+        
+        cat > "$REPORT_FILE" << EOF
+        # 🏆 GitHub Badges Progress Report
+        
+        **Generated:** $(date)  
+        **Repository:** ${{ github.repository }}  
+        **Overall Progress:** ${{ steps.progress.outputs.achieved_count }}/7 badges (${{ steps.progress.outputs.progress_percentage }}%)
+        
+        ## 📊 Badge Status Overview
+        
+        | Badge | Status | Progress |
+        |-------|--------|----------|
+        | 🦈 Pull Shark | ${{ steps.progress.outputs.pull_shark }} | ${{ steps.stats.outputs.pr_count }}/2 PRs merged |
+        | 👥 Pair Extraordinaire | ${{ steps.progress.outputs.pair_extraordinaire }} | ${{ steps.stats.outputs.coauthor_count }} co-authored commits |
+        | ⚙️ DevOps Guru | ${{ steps.progress.outputs.devops_guru }} | ${{ steps.stats.outputs.workflow_count }} GitHub Actions workflows |
+        | 🧠 Galaxy Brain | ${{ steps.progress.outputs.galaxy_brain }} | ${{ steps.stats.outputs.discussion_count }} discussions |
+        | ❤️ Heart On Your Sleeve | ${{ steps.progress.outputs.heart_on_sleeve }} | ${{ steps.stats.outputs.issues_with_reactions }} issues with reactions |
+        | ⚡ Quickdraw | 🔄 Monitoring | ${{ steps.stats.outputs.total_issues }} total issues created |
+        | 🎲 YOLO | 🔄 Manual Check | Check recent direct merges |
+        
+        ## 📈 Detailed Statistics
+        
+        ### 🦈 Pull Shark Progress
+        - **Current:** ${{ steps.stats.outputs.pr_count }} merged PRs
+        - **Required:** 2+ merged PRs
+        - **Status:** $([ "${{ steps.stats.outputs.pr_count }}" -ge 2 ] && echo "✅ Requirements met!" || echo "🔄 Need $((2 - ${{ steps.stats.outputs.pr_count }})) more PRs")
+        
+        ### 👥 Pair Extraordinaire Progress
+        - **Current:** ${{ steps.stats.outputs.coauthor_count }} co-authored commits
+        - **Required:** 1+ co-authored commit
+        - **Status:** $([ "${{ steps.stats.outputs.coauthor_count }}" -ge 1 ] && echo "✅ Requirements met!" || echo "🔄 Need co-authored commits")
+        
+        ### ⚙️ DevOps Guru Progress
+        - **Current:** ${{ steps.stats.outputs.workflow_count }} GitHub Actions workflows
+        - **Required:** 1+ workflow that runs successfully
+        - **Status:** $([ "${{ steps.stats.outputs.workflow_count }}" -ge 1 ] && echo "✅ Requirements met!" || echo "🔄 Need GitHub Actions workflows")
+        
+        ### 🧠 Galaxy Brain Progress
+        - **Current:** ${{ steps.stats.outputs.discussion_count }} discussions
+        - **Required:** Active participation in discussions
+        - **Status:** $([ "${{ steps.stats.outputs.discussion_count }}" -ge 1 ] && echo "✅ Requirements met!" || echo "🔄 Need discussion participation")
+        
+        ### ❤️ Heart On Your Sleeve Progress
+        - **Current:** ${{ steps.stats.outputs.issues_with_reactions }} issues with reactions
+        - **Required:** React to issues/PRs with emoji
+        - **Status:** $([ "${{ steps.stats.outputs.issues_with_reactions }}" -ge 1 ] && echo "✅ Requirements met!" || echo "🔄 Need more reactions on issues")
+        
+        ## 🎯 Next Actions Recommended
+        
+        EOF
+        
+        # Add specific recommendations based on progress
+        if [ "${{ steps.stats.outputs.pr_count }}" -lt 2 ]; then
+          echo "- 🦈 **Pull Shark:** Create $((2 - ${{ steps.stats.outputs.pr_count }})) more Pull Request(s)" >> "$REPORT_FILE"
+        fi
+        
+        if [ "${{ steps.stats.outputs.coauthor_count }}" -lt 1 ]; then
+          echo "- 👥 **Pair Extraordinaire:** Add co-authors to commits using \`Co-authored-by: Name <email>\`" >> "$REPORT_FILE"
+        fi
+        
+        if [ "${{ steps.stats.outputs.workflow_count }}" -lt 1 ]; then
+          echo "- ⚙️ **DevOps Guru:** Create GitHub Actions workflow in \`.github/workflows/\`" >> "$REPORT_FILE"
+        fi
+        
+        if [ "${{ steps.stats.outputs.discussion_count }}" -lt 1 ]; then
+          echo "- 🧠 **Galaxy Brain:** Enable discussions and create/participate in them" >> "$REPORT_FILE"
+        fi
+        
+        if [ "${{ steps.stats.outputs.issues_with_reactions }}" -lt 1 ]; then
+          echo "- ❤️ **Heart On Your Sleeve:** Add emoji reactions to issues and PRs" >> "$REPORT_FILE"
+        fi
+        
+        cat >> "$REPORT_FILE" << EOF
+        
+        ## 🎉 Celebration
+        
+        $([ "${{ steps.progress.outputs.achieved_count }}" -gt 0 ] && echo "🏆 Congratulations! You've achieved ${{ steps.progress.outputs.achieved_count }} badge(s) so far!" || echo "🚀 You're on your way to achieving GitHub badges!")
+        
+        ---
+        *Report generated automatically by GitHub Actions*
+        EOF
+        
+        echo "📝 Progress report generated: $REPORT_FILE"
+        
+    - name: 📢 Create Progress Issue
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const reportFiles = fs.readdirSync('reports')
+            .filter(file => file.startsWith('badge-progress-'))
+            .sort()
+            .reverse();
+          
+          if (reportFiles.length > 0) {
+            const latestReport = fs.readFileSync(`reports/${reportFiles[0]}`, 'utf8');
+            
+            const response = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `📊 Badge Progress Report - ${new Date().toISOString().split('T')[0]}`,
+              body: latestReport,
+              labels: ['badge-tracking', 'progress', 'automated-report']
+            });
+            
+            console.log(`📢 Progress report issue created: ${response.data.html_url}`);
+            
+            // Add a rocket reaction for Heart On Your Sleeve badge
+            await github.rest.reactions.createForIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: response.data.number,
+              content: 'rocket'
+            });
+            
+            console.log('🚀 Added rocket reaction to progress report!');
+          }
+          
+    - name: 🏆 Badge Achievement Celebration
+      run: |
+        echo "🎉 Badge Progress Summary:"
+        echo "=========================="
+        echo "🦈 Pull Shark: ${{ steps.progress.outputs.pull_shark }}"
+        echo "👥 Pair Extraordinaire: ${{ steps.progress.outputs.pair_extraordinaire }}"
+        echo "⚙️ DevOps Guru: ${{ steps.progress.outputs.devops_guru }}"
+        echo "🧠 Galaxy Brain: ${{ steps.progress.outputs.galaxy_brain }}"
+        echo "❤️ Heart On Your Sleeve: ${{ steps.progress.outputs.heart_on_sleeve }}"
+        echo "=========================="
+        echo "📊 Overall Progress: ${{ steps.progress.outputs.achieved_count }}/7 (${{ steps.progress.outputs.progress_percentage }}%)"
+        echo ""
+        if [ "${{ steps.progress.outputs.progress_percentage }}" -ge 50 ]; then
+          echo "🎉 Great progress! You're more than halfway there!"
+        elif [ "${{ steps.progress.outputs.achieved_count }}" -gt 0 ]; then
+          echo "🚀 Good start! Keep up the momentum!"
+        else
+          echo "💪 Time to start earning those badges! You got this!"
+        fi
