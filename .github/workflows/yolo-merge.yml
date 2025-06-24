@@ -132,10 +132,9 @@ jobs:
         - Risk: Low (badge achievement focused)
         
         🎯 Badge Target: YOLO
-        ⚡ Merge Style: Direct (no review required)
-        🚀 Deployment: Immediate
+        ⚡ Merge Style: Direct (no review required)        🚀 Deployment: Immediate
         
-        Co-authored-by: YOLO Bot <yolo@badges.com>"
+        Co-authored-by: Nikolas de Hor <nikolasdehor79@gmail.com>"
         
         echo "✅ YOLO commit created!"
         

@@ -160,8 +160,7 @@ jobs:
         
         # Stage all changes
         git add .
-        
-        # Create co-authored commit
+          # Create co-authored commit
         git commit -m "feat: implement badge enhancement system through pair programming
 
         🤝 Collaborative development session implementing:
@@ -175,8 +174,8 @@ jobs:
         ✅ Clean code practices
         ✅ Comprehensive documentation
         
-        Co-authored-by: GitHub Copilot <copilot@github.com>
-        Co-authored-by: GitHub Actions Bot <actions@github.com>"
+        Co-authored-by: Nikolas de Hor <nikolasdehor79@gmail.com>
+        Co-authored-by: GitHub Copilot <copilot@github.com>"
         
         echo "✅ Co-authored commit created successfully!"
         

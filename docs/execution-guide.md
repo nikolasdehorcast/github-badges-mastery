@@ -29,6 +29,7 @@ Improved documentation for systematic badge achievement including:
 This commit demonstrates collaborative development practices
 for GitHub badge achievement.
 
+Co-authored-by: Nikolas de Hor <nikolasdehor79@gmail.com>
 Co-authored-by: GitHub Copilot <copilot@github.com>"
 ```
 
@@ -100,6 +101,7 @@ gh pr create --title "docs: add badge achievement documentation" --body "Compreh
 
 **10:00 - Commit Co-autorado (5 min)**
 ```bash
+# Criar um commit com co-autoria
 git add .
 git commit -m "feat: implement complete badge achievement system
 
@@ -109,8 +111,8 @@ Comprehensive implementation including:
 - Templates for rapid issue/discussion creation
 - PowerShell scripts for Windows automation
 
-Co-authored-by: GitHub Copilot <copilot@github.com>
-Co-authored-by: Badge Assistant <badges@assistant.com>"
+Co-authored-by: Nikolas de Hor <nikolasdehor79@gmail.com>
+Co-authored-by: GitHub Copilot <copilot@github.com>"
 git push origin main
 ```
 **Resultado:** ✅ 👥 **Pair Extraordinaire** conquistado!
@@ -187,6 +189,7 @@ Implemented comprehensive monitoring system with:
 This enhancement improves the badge achievement experience
 and provides better visibility into progress.
 
+Co-authored-by: Nikolas de Hor <nikolasdehor79@gmail.com>
 Co-authored-by: Monitoring Bot <monitor@badges.com>"
 git push origin feature/monitoring-enhancement-$(date +%Y%m%d)
 

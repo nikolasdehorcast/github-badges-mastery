@@ -51,10 +51,9 @@ github-badges-mastery/
    .\scripts\badge-monitor-complete.ps1 -ShowQuickCommands
    ```
 
-2. **⚡ Conquistar 5 Badges Imediatamente**
-   ```bash
+2. **⚡ Conquistar 5 Badges Imediatamente**   ```bash
    # 👥 Pair Extraordinaire (commit co-autorado)
-   git commit -m "feat: setup complete" -m "Co-authored-by: GitHub Copilot <copilot@github.com>"
+   git commit -m "feat: setup complete" -m "Co-authored-by: Nikolas de Hor <nikolasdehor79@gmail.com>"
    
    # ⚙️ DevOps Guru + ⚡ Quickdraw + ❤️ Heart On Your Sleeve + 🎲 YOLO
    gh workflow run quickdraw-issues.yml
