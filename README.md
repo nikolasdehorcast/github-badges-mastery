@@ -54,4 +54,17 @@ Este README é atualizado automaticamente conforme as insígnias são conquistad
 ---
 
 **Última atualização:** $(date)
-**Insígnias conquistadas:** 0/7
+**Insígnias conquistadas:** 1/7 🦈
+
+## 🏆 Badges Conquistadas
+
+- 🦈 **Pull Shark** - ✅ CONQUISTADA! (2+ PRs merged)
+
+## 🎯 Próximas Badges
+
+- 👥 Pair Extraordinaire (commits com co-autoria)
+- ⚙️ DevOps Guru (GitHub Actions)
+- 🧠 Galaxy Brain (discussões)
+- ⚡ Quickdraw (issues rápidas)
+- ❤️ Heart On Your Sleeve (reações)
+- 🎲 YOLO (merge sem review)
