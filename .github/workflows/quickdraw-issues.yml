@@ -10,6 +10,10 @@ on:
         default: '1'
         type: string
 
+permissions:
+  issues: write
+  contents: read
+
 jobs:
   quickdraw-issues:
     runs-on: ubuntu-latest

@@ -12,7 +12,7 @@ on:
       force_update:
         description: 'Forçar atualização completa'
         required: false
-        default: 'false'
+        default: false
         type: boolean
 
 env:

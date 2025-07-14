@@ -27,6 +27,10 @@ on:
 env:
   BASE_BRANCH: 'main'
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   create-documentation-pr:
     name: 📚 Create Documentation PR

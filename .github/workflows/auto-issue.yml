@@ -15,6 +15,10 @@ on:
         - bug-report
         - documentation
 
+permissions:
+  issues: write
+  contents: read
+
 jobs:
   create-quickdraw-issue:
     name: 🎯 Create Issue for Quickdraw
@@ -37,28 +41,27 @@ jobs:
             title: `📅 Planejamento Semanal - Semana ${weekNumber} (${date})`,
             body: `## 🎯 Objetivos da Semana ${weekNumber}
 
-### 🏆 Progresso das Insígnias
-- [ ] Verificar status Pull Shark
-- [ ] Implementar nova co-autoria (Pair Extraordinaire)
-- [ ] Otimizar workflows (DevOps Guru)
-- [ ] Criar nova discussão (Galaxy Brain)
-- [ ] Adicionar reações em issues (Heart On Your Sleeve)
+          ### 🏆 Progresso das Insígnias
+          - [ ] Verificar status Pull Shark
+          - [ ] Implementar nova co-autoria (Pair Extraordinaire)
+          - [ ] Otimizar workflows (DevOps Guru)
+          - [ ] Criar nova discussão (Galaxy Brain)
+          - [ ] Adicionar reações em issues (Heart On Your Sleeve)
 
-### 📋 Tarefas Técnicas
-- [ ] Revisar documentação
-- [ ] Atualizar scripts de automação
-- [ ] Testar novos workflows
-- [ ] Monitorar métricas de badges
+          ### 📋 Tarefas Técnicas
+          - [ ] Revisar documentação
+          - [ ] Atualizar scripts de automação
+          - [ ] Testar novos workflows
+          - [ ] Monitorar métricas de badges
 
-### 📊 Métricas da Semana
-- PRs criados: 
-- Commits com co-autoria: 
-- Workflows executados: 
-- Discussões criadas: 
-- Issues com reações: 
+          ### 📊 Métricas da Semana
+          - PRs criados: 
+          - Commits com co-autoria: 
+          - Workflows executados: 
+          - Discussões criadas: 
+          - Issues com reações: 
 
----
-**Issue criada automaticamente para badge Quickdraw** ⚡`,
+          **Issue criada automaticamente para badge Quickdraw** ⚡`,
             labels: ['planning', 'weekly', 'quickdraw', 'automation']
           });
 
@@ -73,24 +76,23 @@ jobs:
             title: `💡 Nova Feature - ${new Date().toISOString().split('T')[0]}`,
             body: `## 💡 Descrição da Feature
 
-### Problema
-Descrever o problema que esta feature resolve.
+          ### Problema
+          Descrever o problema que esta feature resolve.
 
-### Solução Proposta
-Descrever a solução proposta.
+          ### Solução Proposta
+          Descrever a solução proposta.
 
-### Benefícios
-- Melhoria na experiência
-- Otimização de processo
-- Facilita conquista de badges
+          ### Benefícios
+          - Melhoria na experiência
+          - Otimização de processo
+          - Facilita conquista de badges
 
-### Critérios de Aceitação
-- [ ] Implementação funcional
-- [ ] Testes adicionados
-- [ ] Documentação atualizada
+          ### Critérios de Aceitação
+          - [ ] Implementação funcional
+          - [ ] Testes adicionados
+          - [ ] Documentação atualizada
 
----
-**Issue criada automaticamente para badge Quickdraw** ⚡`,
+          **Issue criada automaticamente para badge Quickdraw** ⚡`,
             labels: ['enhancement', 'feature', 'quickdraw']
           });
 
@@ -105,23 +107,22 @@ Descrever a solução proposta.
             title: `📚 Atualização de Documentação - ${new Date().toISOString().split('T')[0]}`,
             body: `## 📚 Documentação para Atualizar
 
-### Seções a Revisar
-- [ ] README principal
-- [ ] Guias de estratégias
-- [ ] Documentação de workflows
-- [ ] Exemplos práticos
+          ### Seções a Revisar
+          - [ ] README principal
+          - [ ] Guias de estratégias
+          - [ ] Documentação de workflows
+          - [ ] Exemplos práticos
 
-### Melhorias Necessárias
-- [ ] Adicionar mais exemplos
-- [ ] Atualizar capturas de tela
-- [ ] Revisar links
-- [ ] Corrigir typos
+          ### Melhorias Necessárias
+          - [ ] Adicionar mais exemplos
+          - [ ] Atualizar capturas de tela
+          - [ ] Revisar links
+          - [ ] Corrigir typos
 
-### Impacto
-Esta atualização melhorará a experiência dos usuários e facilitará a replicação das estratégias.
+          ### Impacto
+          Esta atualização melhorará a experiência dos usuários e facilitará a replicação das estratégias.
 
----
-**Issue criada automaticamente para badge Quickdraw** ⚡`,
+          **Issue criada automaticamente para badge Quickdraw** ⚡`,
             labels: ['documentation', 'improvement', 'quickdraw']
           });
 
