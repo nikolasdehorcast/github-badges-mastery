@@ -258,8 +258,9 @@ function Execute-QuickCommands {
     
     Write-Host ""
     Write-ColorOutput "GALAXY BRAIN (MANUAL):" "Yellow" "🧠"
-    Write-Host "   - Vá para Settings → Features → Discussions ✅"
-    Write-Host "   - Crie discussões usando templates em .github/DISCUSSION_TEMPLATE/"
+    Write-Host "   1. Vá para: https://github.com/nikolasdehorcast/github-badges-mastery/settings"
+    Write-Host "   2. Clique em 'Features' → 'Discussions' → 'Set up discussions'"
+    Write-Host "   3. Crie discussões usando templates em .github/DISCUSSION_TEMPLATE/"
     
     if (-not $NoInteraction) {
         Write-Host ""

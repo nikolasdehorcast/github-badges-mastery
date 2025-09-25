@@ -108,13 +108,37 @@ function Test-GitHubCLI {
     }
 }
 
+function Configure-Git {
+    Write-LoggedOutput -Message "🔧 Configurando Git..." -Color $Colors.Info
+    
+    # Verificar se Git já está configurado
+    try {
+        $gitUser = git config user.name 2>$null
+        $gitEmail = git config user.email 2>$null
+        
+        if (-not $gitUser -or -not $gitEmail) {
+            Write-LoggedOutput -Message "⚙️ Configurando identidade Git..." -Color $Colors.Warning
+            git config user.name "nikolasdehorcast" 2>$null
+            git config user.email "nikolasdehorcast@users.noreply.github.com" 2>$null
+            Write-LoggedOutput -Message "✅ Git configurado com sucesso!" -Color $Colors.Success
+        } else {
+            Write-LoggedOutput -Message "✅ Git já configurado: $gitUser <$gitEmail>" -Color $Colors.Success
+        }
+        return $true
+    }
+    catch {
+        Write-LoggedOutput -Message "❌ Erro ao configurar Git: $_" -Color $Colors.Error
+        return $false
+    }
+}
+
 function Enable-Discussions {
     Write-Title "Habilitando Discussions para Galaxy Brain"
     
     Write-LoggedOutput -Message "🧠 Verificando se Discussions estão habilitadas..." -Color $Colors.Info
     
     try {
-        $discussions = gh api repos/:owner/:repo --jq '.has_discussions' 2>$null
+        $discussions = & $global:GitHubCLIPath api repos/:owner/:repo --jq '.has_discussions' 2>$null
         if ($discussions -eq "true") {
             Write-LoggedOutput -Message "✅ Discussions já estão habilitadas!" -Color $Colors.Success
             return $true
@@ -125,22 +149,11 @@ function Enable-Discussions {
     }
     
     Write-LoggedOutput -Message "📝 Para habilitar Discussions manualmente:" -Color $Colors.Warning
-    Write-LoggedOutput -Message "   1. Vá para Settings → Features → Discussions ✅" -Color $Colors.Info
-    Write-LoggedOutput -Message "   2. Clique em 'Set up discussions'" -Color $Colors.Info
-    Write-LoggedOutput -Message "   3. Confirme a habilitação" -Color $Colors.Info
-    
-    if (-not $DryRun) {
-        Write-LoggedOutput -Message "🌐 Abrindo página de configurações..." -Color $Colors.Info
-        try {
-            $repoUrl = git remote get-url origin
-            $repoUrl = $repoUrl -replace '\.git$', ''
-            $repoUrl = $repoUrl -replace '^git@github\.com:', 'https://github.com/'
-            Start-Process "$repoUrl/settings"
-        }
-        catch {
-            Write-LoggedOutput -Message "⚠️ Não foi possível abrir automaticamente" -Color $Colors.Warning -Prefix "WARN"
-        }
-    }
+    Write-LoggedOutput -Message "   1. Vá para https://github.com/nikolasdehorcast/github-badges-mastery/settings" -Color $Colors.Info
+    Write-LoggedOutput -Message "   2. Clique em 'Features' no menu lateral" -Color $Colors.Info
+    Write-LoggedOutput -Message "   3. Encontre 'Discussions' e clique em 'Set up discussions'" -Color $Colors.Info
+    Write-LoggedOutput -Message "   4. Confirme a habilitação" -Color $Colors.Info
+    Write-LoggedOutput -Message "💡 Discussions são necessárias apenas para Galaxy Brain badge" -Color $Colors.Info
     
     return $false
 }
@@ -246,7 +259,7 @@ function Execute-QuickdrawAndHeart {
             Start-Sleep -Seconds 10
             
             # Adicionar reações automaticamente às issues mais recentes
-            $issues = gh issue list --json number,title --limit 3 | ConvertFrom-Json
+            $issues = & $global:GitHubCLIPath issue list --json number,title --limit 3 | ConvertFrom-Json
             
             foreach ($issue in $issues) {
                 Write-LoggedOutput -Message "❤️ Adicionando reações à issue #$($issue.number)" -Color $Colors.Info
@@ -254,7 +267,7 @@ function Execute-QuickdrawAndHeart {
                 $reactions = @("+1", "heart", "rocket", "eyes")
                 foreach ($reaction in $reactions) {
                     try {
-                        gh api repos/:owner/:repo/issues/$($issue.number)/reactions -f content=$reaction
+                        & $global:GitHubCLIPath api repos/:owner/:repo/issues/$($issue.number)/reactions -f content=$reaction
                         Start-Sleep -Seconds 1
                     }
                     catch {
@@ -320,7 +333,7 @@ function Execute-PullShark {
             Start-Sleep -Seconds 15
             
             # Listar PRs criados
-            $prs = gh pr list --json number,title --limit 5 | ConvertFrom-Json
+            $prs = & $global:GitHubCLIPath pr list --json number,title --limit 5 | ConvertFrom-Json
             
             if ($prs.Count -gt 0) {
                 Write-LoggedOutput -Message "📋 PRs encontrados para merge:" -Color $Colors.Info
@@ -332,7 +345,7 @@ function Execute-PullShark {
                 $mergedCount = 0
                 foreach ($pr in $prs | Select-Object -First 2) {
                     try {
-                        gh pr merge $pr.number --squash --delete-branch
+                        & $global:GitHubCLIPath pr merge $pr.number --squash --delete-branch
                         Write-LoggedOutput -Message "✅ PR #$($pr.number) merged!" -Color $Colors.Success
                         $mergedCount++
                         Start-Sleep -Seconds 3
@@ -370,7 +383,7 @@ function Execute-GalaxyBrain {
     Write-LoggedOutput -Message "🧠 Verificando Discussions..." -Color $Colors.Info
     
     try {
-        $discussions = gh api repos/:owner/:repo --jq '.has_discussions'
+        $discussions = & $global:GitHubCLIPath api repos/:owner/:repo --jq '.has_discussions'
         if ($discussions -ne "true") {
             Write-LoggedOutput -Message "❌ Discussions não estão habilitadas!" -Color $Colors.Error -Prefix "ERROR"
             Write-LoggedOutput -Message "📝 Habilite Discussions primeiro nas configurações do repositório" -Color $Colors.Warning
@@ -502,6 +515,12 @@ function Main {
     # Verificar pré-requisitos
     if (-not (Test-GitHubCLI)) {
         Write-LoggedOutput -Message "❌ Pré-requisitos não atendidos!" -Color $Colors.Error -Prefix "ERROR"
+        return
+    }
+    
+    # Configurar Git
+    if (-not (Configure-Git)) {
+        Write-LoggedOutput -Message "❌ Falha na configuração do Git!" -Color $Colors.Error -Prefix "ERROR"
         return
     }
     
