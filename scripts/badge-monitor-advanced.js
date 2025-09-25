@@ -11,6 +11,7 @@ const path = require('path');
 class BadgeMonitor {
   constructor() {
     this.version = '2.0.0';
+    this.githubCLIPath = this.findGitHubCLI();
     this.badges = {
       'pair-extraordinaire': {
         name: '👥 Pair Extraordinaire',
@@ -77,24 +78,55 @@ class BadgeMonitor {
     console.log(`${colors[type]}[${timestamp}] ${message}${colors.reset}`);
   }
 
+  findGitHubCLI() {
+    const possiblePaths = [
+      'C:\\Program Files\\GitHub CLI\\gh.exe',
+      'C:\\Program Files (x86)\\GitHub CLI\\gh.exe',
+      'gh' // Fallback se estiver no PATH
+    ];
+
+    for (const ghPath of possiblePaths) {
+      try {
+        execSync(`"${ghPath}" --version`, { stdio: 'pipe' });
+        this.log(`✅ GitHub CLI found at: ${ghPath}`, 'success');
+        return ghPath;
+      } catch (error) {
+        continue;
+      }
+    }
+
+    this.log('❌ GitHub CLI not found. Install with: winget install GitHub.cli', 'error');
+    return null;
+  }
+
   async checkGitHubCLI() {
+    if (!this.githubCLIPath) {
+      this.log('❌ GitHub CLI not found. Install with: winget install GitHub.cli', 'error');
+      return false;
+    }
+
     try {
-      execSync('gh --version', { stdio: 'pipe' });
+      execSync(`"${this.githubCLIPath}" --version`, { stdio: 'pipe' });
       this.log('✅ GitHub CLI is available', 'success');
       return true;
     } catch (error) {
-      this.log('❌ GitHub CLI not found. Install with: winget install GitHub.cli', 'error');
+      this.log('❌ GitHub CLI not working properly', 'error');
       return false;
     }
   }
 
   async checkAuthentication() {
+    if (!this.githubCLIPath) {
+      this.log('❌ GitHub CLI not found', 'error');
+      return false;
+    }
+
     try {
-      execSync('gh auth status', { stdio: 'pipe' });
+      execSync(`"${this.githubCLIPath}" auth status`, { stdio: 'pipe' });
       this.log('✅ GitHub CLI authenticated', 'success');
       return true;
     } catch (error) {
-      this.log('❌ GitHub CLI not authenticated. Run: gh auth login', 'error');
+      this.log(`❌ GitHub CLI not authenticated. Run: "${this.githubCLIPath}" auth login`, 'error');
       return false;
     }
   }
@@ -121,9 +153,14 @@ class BadgeMonitor {
       this.log('⚠️ Could not check commit history', 'warning');
     }
 
+    if (!this.githubCLIPath) {
+      this.log('⚠️ Skipping GitHub API checks - GitHub CLI not found', 'warning');
+      return;
+    }
+
     try {
       // Check GitHub Actions workflows for DevOps Guru
-      const runs = execSync('gh run list --limit 10 --json status,conclusion', { 
+      const runs = execSync(`"${this.githubCLIPath}" run list --limit 10 --json status,conclusion`, { 
         encoding: 'utf8',
         stdio: 'pipe' 
       });
@@ -145,7 +182,7 @@ class BadgeMonitor {
 
     try {
       // Check recent issues for Quickdraw
-      const issues = execSync('gh issue list --limit 5 --json createdAt,reactions', { 
+      const issues = execSync(`"${this.githubCLIPath}" issue list --limit 5 --json createdAt,reactions`, { 
         encoding: 'utf8',
         stdio: 'pipe' 
       });
@@ -182,7 +219,7 @@ class BadgeMonitor {
 
     try {
       // Check recent PRs for Pull Shark and YOLO
-      const prs = execSync('gh pr list --state merged --limit 10 --json mergedAt,reviews', { 
+      const prs = execSync(`"${this.githubCLIPath}" pr list --state merged --limit 10 --json mergedAt,reviews`, { 
         encoding: 'utf8',
         stdio: 'pipe' 
       });
@@ -221,9 +258,14 @@ class BadgeMonitor {
   }
 
   async checkDiscussions() {
+    if (!this.githubCLIPath) {
+      this.log('⚠️ Cannot check discussions - GitHub CLI not found', 'warning');
+      return;
+    }
+
     try {
       // Check if discussions are enabled
-      const repoInfo = execSync('gh api repos/:owner/:repo --jq .has_discussions', { 
+      const repoInfo = execSync(`"${this.githubCLIPath}" api repos/:owner/:repo --jq .has_discussions`, { 
         encoding: 'utf8',
         stdio: 'pipe' 
       });
@@ -285,19 +327,19 @@ class BadgeMonitor {
             this.log('👥 Run: git commit with Co-authored-by lines', 'warning');
             break;
           case 'devops-guru':
-            this.log('⚙️ Run: gh workflow run ci.yml', 'warning');
+            this.log(`⚙️ Run: "${this.githubCLIPath}" workflow run ci.yml`, 'warning');
             break;
           case 'quickdraw':
-            this.log('⚡ Run: gh workflow run quickdraw-issues.yml', 'warning');
+            this.log(`⚡ Run: "${this.githubCLIPath}" workflow run quickdraw-issues.yml`, 'warning');
             break;
           case 'heart-on-sleeve':
             this.log('❤️ Add reactions to recent issues manually or via API', 'warning');
             break;
           case 'yolo':
-            this.log('🎲 Run: gh workflow run yolo-merge.yml', 'warning');
+            this.log(`🎲 Run: "${this.githubCLIPath}" workflow run yolo-merge.yml`, 'warning');
             break;
           case 'pull-shark':
-            this.log('🦈 Run: gh workflow run pull-shark-automated.yml', 'warning');
+            this.log(`🦈 Run: "${this.githubCLIPath}" workflow run pull-shark-automated.yml`, 'warning');
             break;
           case 'galaxy-brain':
             if (badge.status === 'discussions-disabled') {
@@ -314,6 +356,11 @@ class BadgeMonitor {
   async executeAutomation(dryRun = false) {
     this.log('\n🤖 EXECUTING AUTOMATION', 'info');
     this.log('==========================================', 'info');
+    
+    if (!this.githubCLIPath) {
+      this.log('❌ Cannot execute automation - GitHub CLI not found', 'error');
+      return;
+    }
     
     if (dryRun) {
       this.log('🔍 DRY RUN MODE - No actions will be executed', 'warning');
@@ -333,7 +380,7 @@ class BadgeMonitor {
     if (!this.badges['devops-guru'].acquired) {
       actions.push({
         badge: 'devops-guru',
-        command: 'gh workflow run ci.yml'
+        command: `"${this.githubCLIPath}" workflow run ci.yml`
       });
     }
     
@@ -341,7 +388,7 @@ class BadgeMonitor {
     if (!this.badges['quickdraw'].acquired || !this.badges['heart-on-sleeve'].acquired) {
       actions.push({
         badge: 'quickdraw-heart',
-        command: 'gh workflow run quickdraw-issues.yml'
+        command: `"${this.githubCLIPath}" workflow run quickdraw-issues.yml`
       });
     }
     
@@ -349,7 +396,7 @@ class BadgeMonitor {
     if (!this.badges['yolo'].acquired) {
       actions.push({
         badge: 'yolo',
-        command: 'gh workflow run yolo-merge.yml'
+        command: `"${this.githubCLIPath}" workflow run yolo-merge.yml`
       });
     }
     
@@ -357,7 +404,7 @@ class BadgeMonitor {
     if (!this.badges['pull-shark'].acquired) {
       actions.push({
         badge: 'pull-shark',
-        command: 'gh workflow run pull-shark-automated.yml'
+        command: `"${this.githubCLIPath}" workflow run pull-shark-automated.yml`
       });
     }
     
