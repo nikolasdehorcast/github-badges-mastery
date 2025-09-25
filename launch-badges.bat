@@ -8,21 +8,53 @@ echo 🏆 GITHUB BADGES MASTERY - WINDOWS LAUNCHER
 echo ==========================================
 echo.
 
-REM Verificar se PowerShell 7+ está disponível
-pwsh -Command "Write-Host '✅ PowerShell 7+ encontrado'" 2>nul
+REM Procurar PowerShell 7+ em locais comuns
+set "PWSH_PATH="
+
+REM Tentar PATH primeiro
+pwsh -Command "Write-Host '✅ PowerShell 7+ encontrado no PATH'" 2>nul
 if %errorlevel% equ 0 (
-    echo 🚀 Executando com PowerShell 7...
-    pwsh -File "EXECUTE-BADGES-UNIVERSAL.ps1" %*
-    goto :end
+    set "PWSH_PATH=pwsh"
+    goto :foundpwsh
 )
 
+REM Tentar locais comuns de instalação
+if exist "%ProgramFiles%\PowerShell\7\pwsh.exe" (
+    set "PWSH_PATH=%ProgramFiles%\PowerShell\7\pwsh.exe"
+    goto :foundpwsh
+)
+
+if exist "%ProgramFiles(x86)%\PowerShell\7\pwsh.exe" (
+    set "PWSH_PATH=%ProgramFiles(x86)%\PowerShell\7\pwsh.exe"
+    goto :foundpwsh
+)
+
+REM Verificar no Windows Apps
+for /d %%D in ("%LOCALAPPDATA%\Microsoft\WindowsApps\Microsoft.PowerShell*") do (
+    if exist "%%D\pwsh.exe" (
+        set "PWSH_PATH=%%D\pwsh.exe"
+        goto :foundpwsh
+    )
+)
+
+goto :try51
+
+:foundpwsh
+echo ✅ PowerShell 7+ encontrado
+echo 🚀 Executando com PowerShell 7...
+echo.
+"%PWSH_PATH%" -File "EXECUTE-BADGES-UNIVERSAL.ps1" %*
+goto :end
+
+:try51
 REM Verificar se PowerShell 5.1 está disponível
 powershell -Command "Write-Host '✅ PowerShell 5.1 encontrado'" 2>nul
 if %errorlevel% equ 0 (
+    echo ✅ PowerShell 5.1 encontrado
     echo ⚠️ Usando PowerShell 5.1 (recomenda-se PowerShell 7)
     echo 💡 Para melhor experiência, instale PowerShell 7: winget install Microsoft.PowerShell
     echo.
-    powershell -File "EXECUTE-BADGES-UNIVERSAL.ps1" %*
+    powershell -ExecutionPolicy Bypass -File "EXECUTE-BADGES-UNIVERSAL.ps1" %*
     goto :end
 )
 

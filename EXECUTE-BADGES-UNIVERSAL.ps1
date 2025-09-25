@@ -13,10 +13,18 @@ param(
 $ErrorActionPreference = "Continue"
 $ProgressPreference = "SilentlyContinue"
 
-# Detectar SO
-$IsWindows = $PSVersionTable.PSVersion.Major -ge 6 -and $IsWindows -or $PSVersionTable.PSVersion.Major -lt 6
-$IsLinux = $PSVersionTable.Platform -eq "Unix" -and -not $IsMacOS
-$IsMacOS = $PSVersionTable.Platform -eq "Unix" -and [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::OSX)
+# Detectar SO compatível com PowerShell 5.1 e 7+
+if ($PSVersionTable.PSVersion.Major -ge 6) {
+    # PowerShell 7+ - usar variáveis nativas
+    $IsWindowsOS = $IsWindows
+    $IsLinuxOS = $IsLinux  
+    $IsMacOSOS = $IsMacOS
+} else {
+    # PowerShell 5.1 - detectar manualmente
+    $IsWindowsOS = $true
+    $IsLinuxOS = $false
+    $IsMacOSOS = $false
+}
 
 function Write-ColorOutput {
     param(
@@ -53,35 +61,98 @@ function Test-Command {
     }
 }
 
+function Find-GitHubCLI {
+    # Procurar em locais de instalação (ordem de prioridade)
+    # Não usar PATH pois pode estar quebrado
+    $searchPaths = @(
+        # Instalação padrão (mais comum)
+        "${env:ProgramFiles}\GitHub CLI\gh.exe",
+        "${env:ProgramFiles(x86)}\GitHub CLI\gh.exe",
+        # Winget installations
+        "${env:LOCALAPPDATA}\Microsoft\WindowsApps\gh.exe",
+        "${env:USERPROFILE}\AppData\Local\Microsoft\WindowsApps\gh.exe",
+        # Chocolatey installations
+        "${env:ProgramData}\chocolatey\bin\gh.exe",
+        # Outras localizações
+        "${env:LOCALAPPDATA}\GitHubCLI\gh.exe",
+        "${env:APPDATA}\GitHub CLI\gh.exe"
+    )
+    
+    # Verificar WindowsApps directory (mais abrangente)
+    try {
+        $wingetApps = "${env:LOCALAPPDATA}\Microsoft\WindowsApps"
+        if (Test-Path $wingetApps) {
+            $ghFiles = Get-ChildItem $wingetApps -Filter "gh.exe" -Recurse -ErrorAction SilentlyContinue
+            foreach ($file in $ghFiles) {
+                $searchPaths += $file.FullName
+            }
+        }
+    } catch {}
+    
+    # Testar cada caminho
+    foreach ($path in $searchPaths) {
+        if (Test-Path $path) {
+            try {
+                # Testar se o executável funciona
+                $null = & $path --version 2>$null
+                if ($LASTEXITCODE -eq 0) {
+                    return $path
+                }
+            } catch {}
+        }
+    }
+    
+    return $null
+}
+
 function Test-Prerequisites {
     Write-ColorOutput "Verificando pré-requisitos..." "Cyan" "🔍"
-    
-    $checks = @(
-        @{ Name = "Git"; Command = "git"; Required = $true },
-        @{ Name = "GitHub CLI"; Command = "gh"; Required = $true },
-        @{ Name = "Node.js"; Command = "node"; Required = $false }
-    )
     
     $allGood = $true
     $missing = @()
     
-    foreach ($check in $checks) {
-        if (Test-Command $check.Command) {
-            try {
-                $version = & $check.Command --version 2>$null | Select-Object -First 1
-                Write-ColorOutput "$($check.Name): $version" "Green" "✅"
-            }
-            catch {
-                Write-ColorOutput "$($check.Name): Instalado" "Green" "✅"
-            }
+    # Verificar Git
+    if (Test-Command "git") {
+        try {
+            $version = git --version 2>$null
+            Write-ColorOutput "Git: $version" "Green" "✅"
         }
-        else {
-            Write-ColorOutput "$($check.Name): Não encontrado" "Red" "❌"
-            if ($check.Required) {
-                $allGood = $false
-                $missing += $check.Name
-            }
+        catch {
+            Write-ColorOutput "Git: Instalado" "Green" "✅"
         }
+    } else {
+        Write-ColorOutput "Git: Não encontrado" "Red" "❌"
+        $allGood = $false
+        $missing += "Git"
+    }
+    
+    # Verificar GitHub CLI com busca avançada
+    $global:GitHubCLIPath = Find-GitHubCLI
+    if ($global:GitHubCLIPath) {
+        try {
+            $version = & $global:GitHubCLIPath --version 2>$null | Select-Object -First 1
+            Write-ColorOutput "GitHub CLI: $version (Caminho: $global:GitHubCLIPath)" "Green" "✅"
+        }
+        catch {
+            Write-ColorOutput "GitHub CLI: Instalado (Caminho: $global:GitHubCLIPath)" "Green" "✅"
+        }
+    } else {
+        Write-ColorOutput "GitHub CLI: Não encontrado" "Red" "❌"
+        $allGood = $false
+        $missing += "GitHub CLI"
+    }
+    
+    # Verificar Node.js (opcional)
+    if (Test-Command "node") {
+        try {
+            $version = node --version 2>$null
+            Write-ColorOutput "Node.js: $version" "Green" "✅"
+        }
+        catch {
+            Write-ColorOutput "Node.js: Instalado" "Green" "✅"
+        }
+    } else {
+        Write-ColorOutput "Node.js: Não encontrado (opcional)" "Yellow" "⚠️"
     }
     
     if (-not $allGood) {
@@ -95,8 +166,16 @@ function Test-Prerequisites {
 }
 
 function Test-GitHubAuth {
+    # Sempre procurar o GitHub CLI para garantir caminho correto
+    $global:GitHubCLIPath = Find-GitHubCLI
+    
+    if (-not $global:GitHubCLIPath) {
+        Write-ColorOutput "GitHub CLI não encontrado" "Red" "❌"
+        return $false
+    }
+    
     try {
-        $null = gh auth status 2>&1
+        $result = & $global:GitHubCLIPath auth status 2>&1
         if ($LASTEXITCODE -eq 0) {
             Write-ColorOutput "GitHub CLI autenticado" "Green" "✅"
             return $true
@@ -164,7 +243,7 @@ function Execute-QuickCommands {
     Write-Host ""
     
     $commands = @(
-        @{ Name = "PAIR EXTRAORDINAIRE"; Command = "git add . && git commit -m `"🏆 badge automation`n`nCo-authored-by: GitHub Copilot <copilot@github.com>`" && git push" },
+        @{ Name = "PAIR EXTRAORDINAIRE"; Command = 'git add .; git commit -m "🏆 badge automation`n`nCo-authored-by: GitHub Copilot <copilot@github.com>"; git push' },
         @{ Name = "DEVOPS GURU"; Command = "gh workflow run ci.yml" },
         @{ Name = "QUICKDRAW + HEART"; Command = "gh workflow run quickdraw-issues.yml" },
         @{ Name = "YOLO"; Command = "gh workflow run yolo-merge.yml" },
@@ -194,7 +273,25 @@ function Execute-QuickCommands {
                     Write-ColorOutput "[DRY RUN] $($cmd.Command)" "Yellow" "🔍"
                 } else {
                     try {
-                        Invoke-Expression $cmd.Command
+                        if ($cmd.Name -eq "PAIR EXTRAORDINAIRE") {
+                            # Comando especial para commit com co-author
+                            git add .
+                            git commit -m "🏆 badge automation`n`nCo-authored-by: GitHub Copilot <copilot@github.com>"
+                            git push
+                        } elseif ($cmd.Command.StartsWith("gh ")) {
+                            # Comando GitHub CLI - usar caminho completo
+                            if (-not $global:GitHubCLIPath) {
+                                $global:GitHubCLIPath = Find-GitHubCLI
+                            }
+                            if ($global:GitHubCLIPath) {
+                                $ghCommand = $cmd.Command -replace "^gh ", ""
+                                & $global:GitHubCLIPath $ghCommand.Split(" ")
+                            } else {
+                                throw "GitHub CLI não encontrado"
+                            }
+                        } else {
+                            Invoke-Expression $cmd.Command
+                        }
                         Write-ColorOutput "$($cmd.Name) executado!" "Green" "✅"
                     }
                     catch {
@@ -254,15 +351,15 @@ function Install-Prerequisites {
         Write-ColorOutput "Script de instalação não encontrado!" "Red" "❌"
         Write-ColorOutput "Instale manualmente:" "Yellow" "💡"
         
-        if ($IsWindows) {
+        if ($IsWindowsOS) {
             Write-Host "  winget install Git.Git"
             Write-Host "  winget install GitHub.cli"
             Write-Host "  winget install OpenJS.NodeJS"
-        } elseif ($IsLinux) {
+        } elseif ($IsLinuxOS) {
             Write-Host "  sudo apt install git gh nodejs npm  # Ubuntu/Debian"
             Write-Host "  sudo dnf install git gh nodejs npm  # Fedora"
             Write-Host "  sudo pacman -S git github-cli nodejs npm  # Arch"
-        } elseif ($IsMacOS) {
+        } elseif ($IsMacOSOS) {
             Write-Host "  brew install git gh node"
         }
     }
@@ -271,15 +368,31 @@ function Install-Prerequisites {
 function Setup-Authentication {
     Write-Title "CONFIGURANDO AUTENTICAÇÃO GITHUB"
     
+    # Sempre procurar o GitHub CLI para garantir caminho correto
+    $global:GitHubCLIPath = Find-GitHubCLI
+    
+    if (-not $global:GitHubCLIPath) {
+        Write-ColorOutput "GitHub CLI não encontrado!" "Red" "❌"
+        Write-ColorOutput "Instale primeiro: winget install GitHub.cli" "Yellow" "💡"
+        return
+    }
+    
     Write-ColorOutput "Iniciando processo de autenticação..." "Yellow" "🔑"
     Write-ColorOutput "Você será redirecionado para o browser para fazer login" "Cyan" "💡"
+    Write-ColorOutput "Usando caminho: $global:GitHubCLIPath" "Gray" "🔍"
     
-    gh auth login --web
-    
-    if ($LASTEXITCODE -eq 0) {
-        Write-ColorOutput "Autenticação realizada com sucesso!" "Green" "✅"
-    } else {
-        Write-ColorOutput "Falha na autenticação" "Red" "❌"
+    try {
+        & $global:GitHubCLIPath auth login --web
+        
+        if ($LASTEXITCODE -eq 0) {
+            Write-ColorOutput "Autenticação realizada com sucesso!" "Green" "✅"
+        } else {
+            Write-ColorOutput "Falha na autenticação" "Red" "❌"
+        }
+    }
+    catch {
+        Write-ColorOutput "Erro ao executar GitHub CLI: $_" "Red" "❌"
+        Write-ColorOutput "Caminho usado: $global:GitHubCLIPath" "Yellow" "💡"
     }
 }
 
@@ -313,7 +426,7 @@ function Show-Documentation {
         $view = Read-Host "Abrir guia definitivo? (S/N)"
         if ($view -eq "S" -or $view -eq "s" -or $view -eq "Y" -or $view -eq "y") {
             if (Test-Path "CONQUISTE-TODAS-BADGES.md") {
-                if ($IsWindows) {
+                if ($IsWindowsOS) {
                     Start-Process "CONQUISTE-TODAS-BADGES.md"
                 } else {
                     Write-ColorOutput "Abra o arquivo: CONQUISTE-TODAS-BADGES.md" "Yellow" "💡"
@@ -326,7 +439,7 @@ function Show-Documentation {
 # EXECUÇÃO PRINCIPAL
 function Main {
     # Detectar SO
-    $osName = if ($IsWindows) { "Windows" } elseif ($IsLinux) { "Linux" } elseif ($IsMacOS) { "macOS" } else { "Desconhecido" }
+    $osName = if ($IsWindowsOS) { "Windows" } elseif ($IsLinuxOS) { "Linux" } elseif ($IsMacOSOS) { "macOS" } else { "Desconhecido" }
     
     Write-Title "GITHUB BADGES MASTERY - EXECUTOR UNIVERSAL"
     Write-ColorOutput "Sistema operacional: $osName" "Cyan" "💻"
@@ -425,7 +538,7 @@ function Main {
     Write-Host ""
     Write-ColorOutput "OPERAÇÃO CONCLUÍDA!" "Green" "🎉"
     Write-ColorOutput "Verifique suas badges em: https://github.com/settings/profile" "Cyan" "🔗"
-    Write-ColorOutput "Aguarde 2-4 horas para badges aparecerem no perfil" "Yellow" "💡"
+    Write-ColorOutput "Aguarde 2-4 horas para badges aparecerem no perfil" "Yellow" "⏰"
 }
 
 # Executar script principal

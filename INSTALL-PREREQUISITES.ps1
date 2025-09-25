@@ -103,6 +103,10 @@ function Install-WindowsPrerequisites {
     
     return $true
 }
+
+function Install-Winget {
+    Write-ColorOutput "📦 Instalando Winget..." "Yellow"
+    try {
         Invoke-WebRequest -Uri https://aka.ms/getwinget -OutFile Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle
         Add-AppxPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle
         Remove-Item Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle

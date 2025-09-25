@@ -45,17 +45,55 @@ function Write-Title {
     Write-LoggedOutput -Message $Title -Prefix "TITLE"
 }
 
+function Find-GitHubCLI {
+    # Procurar em locais de instalação (ordem de prioridade)
+    $searchPaths = @(
+        "${env:ProgramFiles}\GitHub CLI\gh.exe",
+        "${env:ProgramFiles(x86)}\GitHub CLI\gh.exe",
+        "${env:LOCALAPPDATA}\Microsoft\WindowsApps\gh.exe"
+    )
+    
+    foreach ($path in $searchPaths) {
+        if (Test-Path $path) {
+            try {
+                $null = & $path --version 2>$null
+                if ($LASTEXITCODE -eq 0) {
+                    return $path
+                }
+            } catch {}
+        }
+    }
+    return $null
+}
+
+function Invoke-GitHubCLI {
+    param([string[]]$Arguments)
+    if (-not $global:GitHubCLIPath) {
+        $global:GitHubCLIPath = Find-GitHubCLI
+    }
+    if ($global:GitHubCLIPath) {
+        & $global:GitHubCLIPath @Arguments
+    } else {
+        Write-LoggedOutput -Message "❌ GitHub CLI não encontrado!" -Color $Colors.Error
+        return $false
+    }
+}
+
 function Test-GitHubCLI {
     Write-LoggedOutput -Message "Verificando GitHub CLI..." -Color $Colors.Info
-    if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
+    
+    $global:GitHubCLIPath = Find-GitHubCLI
+    if (-not $global:GitHubCLIPath) {
         Write-LoggedOutput -Message "❌ GitHub CLI não está instalado!" -Color $Colors.Error -Prefix "ERROR"
         Write-LoggedOutput -Message "Instale com: winget install GitHub.cli" -Color $Colors.Warning -Prefix "FIX"
         return $false
     }
     
+    Write-LoggedOutput -Message "✅ GitHub CLI encontrado: $global:GitHubCLIPath" -Color $Colors.Success
+    
     # Verificar autenticação
     try {
-        $auth = gh auth status --hostname github.com 2>&1
+        $auth = & $global:GitHubCLIPath auth status --hostname github.com 2>&1
         if ($LASTEXITCODE -ne 0) {
             Write-LoggedOutput -Message "❌ GitHub CLI não está autenticado!" -Color $Colors.Error -Prefix "ERROR"
             Write-LoggedOutput -Message "Execute: gh auth login" -Color $Colors.Warning -Prefix "FIX"
@@ -169,7 +207,7 @@ function Execute-DevOpsGuru {
         
         if (-not $DryRun) {
             try {
-                gh workflow run $workflow
+                Invoke-GitHubCLI -Arguments @("workflow", "run", $workflow)
                 if ($LASTEXITCODE -eq 0) {
                     Write-LoggedOutput -Message "✅ Workflow $workflow executado!" -Color $Colors.Success
                     Start-Sleep -Seconds 2  # Evitar rate limiting
@@ -200,7 +238,7 @@ function Execute-QuickdrawAndHeart {
     if (-not $DryRun) {
         try {
             # Executar workflow que cria issues automaticamente
-            gh workflow run quickdraw-issues.yml
+            Invoke-GitHubCLI -Arguments @("workflow", "run", "quickdraw-issues.yml")
             Write-LoggedOutput -Message "✅ Workflow quickdraw-issues.yml executado!" -Color $Colors.Success
             
             # Aguardar um pouco para as issues serem criadas
@@ -246,7 +284,7 @@ function Execute-YOLO {
     
     if (-not $DryRun) {
         try {
-            gh workflow run yolo-merge.yml
+            Invoke-GitHubCLI -Arguments @("workflow", "run", "yolo-merge.yml")
             if ($LASTEXITCODE -eq 0) {
                 Write-LoggedOutput -Message "✅ Workflow YOLO executado!" -Color $Colors.Success
                 return $true
@@ -275,7 +313,7 @@ function Execute-PullShark {
     if (-not $DryRun) {
         try {
             # Executar workflow que cria PRs automaticamente
-            gh workflow run auto-pr-creator.yml
+            Invoke-GitHubCLI -Arguments @("workflow", "run", "auto-pr-creator.yml")
             Write-LoggedOutput -Message "✅ Workflow auto-pr-creator.yml executado!" -Color $Colors.Success
             
             Write-LoggedOutput -Message "⏳ Aguardando criação dos PRs..." -Color $Colors.Info
